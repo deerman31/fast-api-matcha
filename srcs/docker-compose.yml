@@ -1,0 +1,89 @@
+services:
+  back:
+    image: 42-matcha/back:${VERSION:-latest}
+    build:
+      context: ./back
+      dockerfile: Dockerfile
+    restart: always
+    # 本番環境では開ける必要がない。開発では、直接リクエストを送れたりするので開けといた方が便利。
+    ports:
+      - "${BACK_PORT}:8000"
+    env_file: .env
+
+    depends_on:
+      db:
+        condition: service_healthy # ヘルスチェックが通るまで待つ
+    networks:
+      - app-network
+
+  front:
+    image: 42-matcha/front:${VERSION:-latest}
+    build:
+      context: ./front
+      dockerfile: Dockerfile
+    restart: always
+    # 本番環境では開ける必要がない。開発では、直接リクエストを送れたりするので開けといた方が便利。
+    ports:
+      - "${FRONT_PORT}:5173"
+    env_file: .env
+    depends_on:
+      - back
+    networks:
+      - app-network
+
+  db:
+    image: 42-matcha/db:${VERSION:-latest}
+    build:
+      context: ./db
+      dockerfile: Dockerfile
+    restart: always
+    env_file: .env
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+  nginx:
+    image: 42-matcha/nginx:${VERSION:-latest}
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "${NGINX_PORT}:443"
+    env_file: .env
+    depends_on:
+      - front
+      - back
+    networks:
+      - app-network
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: db
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - app-network
+    # logging:
+    #   driver: "none" # ログ出力を完全に無効化
+
+volumes:
+  postgres_data:
+
+
+networks:
+  app-network:
+    name: 42-matcha
+    driver: bridge
