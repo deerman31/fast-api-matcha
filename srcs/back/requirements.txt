@@ -8,3 +8,8 @@ pydantic
 sqlalchemy
 psycopg2-binary
 python-dotenv
+
+bcrypt 
+
+
+pydantic[email]
