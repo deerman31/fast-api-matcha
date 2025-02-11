@@ -6,18 +6,20 @@ from schemas.auth_schema import RegisterResponse, RegisterRequest
 
 
 class AuthService:
-    @staticmethod
-    def check_duplicate_credentials(conn: connection, username: str, email: str):
-        with conn.cursor() as cur:
-            cur.execute(
-                """
+    def _check_duplicate_credentials(conn: connection, username: str, email: str):
+        query = """
             SELECT
                 EXISTS(SELECT 1 FROM users WHERE username = %s) as username_exists,
                 EXISTS(SELECT 1 FROM users WHERE email = %s) as email_exists
-            """,
+            """
+
+        with conn.cursor() as cur:
+            # execute() sqlクエリを実行
+            cur.execute(
+                query,
                 (username, email),
             )
-            result = cur.fetchone()
+            result = cur.fetchone()  # 1行取得
 
             if result["username_exists"]:
                 raise HTTPException(
@@ -30,28 +32,25 @@ class AuthService:
                     detail=f"Email {email} is already registered",
                 )
 
-    @staticmethod
-    def create_user(conn: connection, username: str, email: str, password: str) -> int:
-        with conn.cursor() as cur:
-            cur.execute(
-                """
+    def _create_user(conn: connection, username: str, email: str, password: str) -> int:
+        query = """
                 INSERT INTO users (username, email, password_hash)
                 VALUES (%s, %s, %s)
                 RETURNING id
-            """,
+            """
+
+        with conn.cursor() as cur:
+            cur.execute(
+                query,
                 (username, email, password),
             )
             result = cur.fetchone()
             return result["id"]
 
-    @staticmethod
+    @staticmethod  # インスタンス化不要で呼び出せるmethod
     def register(conn: connection, register_data: RegisterRequest) -> dict:
-        if register_data.password != register_data.re_password:
-            raise HTTPException(
-                status_code=HTTPStatus.BAD_REQUEST,
-                detail="Password and confirm password do not match",
-            )
-        AuthService.check_duplicate_credentials(
+        # usernameとemailの重複をCheck
+        AuthService._check_duplicate_credentials(
             conn, register_data.username, register_data.email
         )
 
@@ -61,9 +60,10 @@ class AuthService:
         ).decode("utf-8")
 
         # Create user
-        user_id = AuthService.create_user(
+        user_id = AuthService._create_user(
             conn, register_data.username, register_data.email, hashed
         )
+
         return RegisterResponse(
             message="User created successfully. Please check your email to verify your account.",
             error=None,

@@ -13,3 +13,7 @@ bcrypt
 
 
 pydantic[email]
+
+pytest
+
+httpx
