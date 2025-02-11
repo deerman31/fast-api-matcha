@@ -1,13 +1,11 @@
 import re
 
 
-def is_pattern_match(s: str, pattern_str: str) -> bool:
-    matches = re.findall(pattern_str, s)
-    return len("".join(matches)) == len(s)
+def is_pattern_match(text: str, target_text: str) -> bool:
+    match = re.fullmatch(target_text, text)
+    return match is not None
 
 
-def length_check(v: str, min: int, max: int) -> bool:
-    length = len(v)
-    if length < min or length > max:
-        return False
-    return True
+# 引数のvalueのlengthが min <= value <= maxに収まっているかを調べる
+def length_check(value: str, min_length: int, max_length: int) -> bool:
+    return min_length <= len(value) <= max_length
