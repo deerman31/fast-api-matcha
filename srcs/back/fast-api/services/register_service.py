@@ -51,7 +51,9 @@ class RegisterService:
     def register(conn: connection, register_data: RegisterRequest) -> dict:
         # usernameとemailの重複をCheck
         RegisterService._check_duplicate_credentials(
-            conn, register_data.username, register_data.email
+            conn,
+            register_data.username,
+            register_data.email,
         )
 
         # Hash password
@@ -60,11 +62,13 @@ class RegisterService:
         ).decode("utf-8")
 
         # Create user
-        user_id = RegisterService._create_user(
-            conn, register_data.username, register_data.email, hashed
+        _ = RegisterService._create_user(
+            conn,
+            register_data.username,
+            register_data.email,
+            hashed,
         )
 
         return RegisterResponse(
             message="User created successfully. Please check your email to verify your account.",
-            error=None,
         )

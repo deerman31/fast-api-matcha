@@ -39,5 +39,4 @@ class RegisterRequest(BaseModel):
 
 
 class RegisterResponse(BaseModel):
-    message: str | None
-    error: str | None
+    message: str

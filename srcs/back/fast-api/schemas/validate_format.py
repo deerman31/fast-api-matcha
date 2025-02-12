@@ -1,11 +1,13 @@
 from utils.validate_utils import is_pattern_match, length_check
+from fastapi import HTTPException
+from http import HTTPStatus
 import re
 
 
 def validate_username_format(username: str) -> str:
-    if not length_check(username, 3, 255):
+    if not length_check(username, 3, 20):
         raise ValueError(
-            "Username must be at least 3 characters and no more than 255 characters"
+            "Username must be at least 3 characters and no more than 20 characters"
         )
     pattern = "[a-zA-Z0-9_]"
     if not is_pattern_match(username, pattern):
