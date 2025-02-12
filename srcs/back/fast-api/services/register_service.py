@@ -15,6 +15,11 @@ logging.basicConfig(
 
 
 class RegisterService:
+    """
+    目的：
+    引数のusername, emailを使い、データベースのusersテーブルに同じusernameとemailがないかを調べる
+    """
+
     def _check_duplicate_credentials(conn: connection, username: str, email: str):
         logger.debug("START: _check_duplicate_credentials()")
         query = """
@@ -44,6 +49,10 @@ class RegisterService:
                     detail=f"Email {email} is already registered",
                 )
         logger.debug("END: _check_duplicate_credentials()")
+
+    """
+    目的： username,email,passwordを使い、新規ユーザーを作成
+    """
 
     def _create_user(conn: connection, username: str, email: str, password: str) -> int:
         query = """
