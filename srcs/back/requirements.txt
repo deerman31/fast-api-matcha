@@ -17,3 +17,9 @@ pydantic[email]
 pytest
 
 httpx
+
+
+python-jose[cryptography]
+passlib[bcrypt]
+
+pyjwt
