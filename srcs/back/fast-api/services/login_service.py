@@ -8,59 +8,45 @@ from utils.jwts import (
     get_access_token_expires,
     create_access_token,
 )
-
-import logging
-
-# ロガーの設定
-logger = logging.getLogger(__name__)
-logging.basicConfig(
-    level=logging.DEBUG,  # 開発時はDEBUG、本番はINFOなどに設定
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-)
+from services.err import USER_NOT_FOUND, INVALID_PASSWORD, EMAIL_NOT_VARIFY
 
 
 class LoginService:
     @staticmethod
     def login(conn: connection, data: LoginRequest) -> dict:
-        logger.debug("START: login()")
+        print("1----------------------------------------")
         user = get_user(conn, data.username)
+        print("2----------------------------------------")
         if user is None:
+            print("3----------------------------------------")
             raise HTTPException(
-                status_code=HTTPStatus.NOT_FOUND,
-                detail="User not found",
+                status_code=USER_NOT_FOUND.status_code,
+                detail=USER_NOT_FOUND.message,
             )
-
-        logger.debug("OK get_user()")
+        print("4---------------------------------------")
 
         if not user.is_registered:
             raise HTTPException(
-                status_code=HTTPStatus.FORBIDDEN,
-                detail="Email not verified",
+                status_code=EMAIL_NOT_VARIFY.status_code,
+                detail=EMAIL_NOT_VARIFY.message,
             )
-        logger.debug("user.is_registered")
+        print("5---------------------------------------")
 
         if not verify_password(data.password, user.password_hash):
             raise HTTPException(
-                status_code=HTTPStatus.FORBIDDEN,
-                detail="Invalid password",
+                status_code=INVALID_PASSWORD.status_code,
+                detail=INVALID_PASSWORD.message,
             )
-        logger.debug("OK verify_password()")
+        print("6---------------------------------------")
 
         expires = get_access_token_expires()
-
-        logger.debug("OK: get_access_token_expires()")
-
         access_token = create_access_token(data={"sub": user.id}, expires_delta=expires)
-        logger.debug("OK: create_access_token()")
 
         if not LoginService._update_status_on(conn, user.id):
             raise HTTPException(
-                status_code=HTTPStatus.NOT_FOUND,
-                detail="User not found",
+                status_code=USER_NOT_FOUND.status_code, detail=USER_NOT_FOUND.message
             )
-        logger.debug("OK: _update_status_on()")
 
-        logger.debug("OK: login()")
         return LoginResponse(
             is_preparation=user.is_preparation,
             access_token=access_token,
@@ -74,16 +60,10 @@ class LoginService:
         RETURNING id
         """
 
-        logger.debug("START: _update_status_on()")
-
         with conn.cursor() as cur:
-            logger.debug("OK: with conn.cursor() as cur:")
             cur.execute(query, (id,))
-            logger.debug("OK: cur.execute(query, (id,))")
             result = cur.fetchone()
-            logger.debug("OK: result = cur.fetchone()")
 
-            logger.debug("OK: _update_status_on()")
             if result is None:
                 return False
         return True

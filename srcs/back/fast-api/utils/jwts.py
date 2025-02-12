@@ -8,14 +8,6 @@ from psycopg2.extensions import connection
 
 from schemas.login_schema import LoginUser
 import jwt
-import logging
-
-# ロガーの設定
-logger = logging.getLogger(__name__)
-logging.basicConfig(
-    level=logging.DEBUG,  # 開発時はDEBUG、本番はINFOなどに設定
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-)
 
 # 環境変数の読み込み
 load_dotenv()
@@ -28,20 +20,17 @@ ALGORITHM = "HS256"
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
+# 目的: 二つの引数を比較し、一致するかを調べる.
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    logger.debug("START: verify_password()")
-    f = pwd_context.verify(plain_password, hashed_password)
-    logger.debug("END: verify_password()")
-    return f
+    return pwd_context.verify(plain_password, hashed_password)
 
 
+# 目的: passwordをhash化する
 def get_password_hash(password: str) -> str:
-    logger.debug("START: get_password_hash()")
-    f = pwd_context.hash(password)
-    logger.debug("END: get_password_hash()")
-    return f
+    return pwd_context.hash(password)
 
 
+# 目的: usernameを使って、DBから該当のuser情報を取得する
 def get_user(conn: connection, username: str) -> Optional[LoginUser]:
     query = """
         SELECT id, username, password_hash, is_online, is_registered, is_preparation
@@ -49,17 +38,12 @@ def get_user(conn: connection, username: str) -> Optional[LoginUser]:
         WHERE username = %s
         LIMIT 1
 """
-    logger.debug("START: get_user()")
     with conn.cursor() as cur:
-        logger.debug("OK: with conn.cursor() as cur:")
         cur.execute(query, (username,))
-        logger.debug("OK: cur.execute()")
         result = cur.fetchone()
-        logger.debug("OK: cur.fetchone()")
         if result is None:
             return None
 
-    logger.debug("END: get_user()")
     return LoginUser(
         id=result["id"],
         username=result["username"],
@@ -70,23 +54,15 @@ def get_user(conn: connection, username: str) -> Optional[LoginUser]:
     )
 
 
+# access_tokenを生成
 def create_access_token(data: dict, expires_delta: timedelta) -> str:
-    logger.debug("START: create_access_token()")
     to_encode = data.copy()
-    logger.debug("OK: data.copy()")
-
     expire = datetime.now(timezone.utc) + expires_delta
-    logger.debug("OK: datetime.now(timezone.utc) + expires_delta")
     to_encode.update({"exp": expire})
-    logger.debug('OK: to_encode.update({"exp": expire})')
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    logger.debug("OK: jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)")
-    logger.debug("END: create_access_token()")
     return encoded_jwt
 
 
+# 上のcreate_access_token()に使うtokenの有効期限のexpiresを生成
 def get_access_token_expires() -> timedelta:
-    logger.debug("START: get_access_token_expires()")
-    t = timedelta(minutes=float(ACCESS_TOKEN_EXPIRE_MINUTES))
-    logger.debug("END: get_access_token_expires()")
-    return t
+    return timedelta(minutes=float(ACCESS_TOKEN_EXPIRE_MINUTES))

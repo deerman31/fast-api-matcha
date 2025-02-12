@@ -22,7 +22,7 @@ class LoginResponse(BaseModel):
     access_token: str
 
 
-class LoginUser:
+class LoginUser(BaseModel):
     id: int
     username: str
     password_hash: str
