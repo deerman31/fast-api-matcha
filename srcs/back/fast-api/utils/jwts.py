@@ -30,12 +30,16 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     logger.debug("START: verify_password()")
-    return pwd_context.verify(plain_password, hashed_password)
+    f = pwd_context.verify(plain_password, hashed_password)
+    logger.debug("END: verify_password()")
+    return f
 
 
 def get_password_hash(password: str) -> str:
     logger.debug("START: get_password_hash()")
-    return pwd_context.hash(password)
+    f = pwd_context.hash(password)
+    logger.debug("END: get_password_hash()")
+    return f
 
 
 def get_user(conn: connection, username: str) -> Optional[LoginUser]:
@@ -46,27 +50,24 @@ def get_user(conn: connection, username: str) -> Optional[LoginUser]:
         LIMIT 1
 """
     logger.debug("START: get_user()")
-    user = LoginUser()
-    logger.debug("OK: user = User()")
     with conn.cursor() as cur:
         logger.debug("OK: with conn.cursor() as cur:")
-        cur.execute(
-            query,
-            (username,),
-        )
+        cur.execute(query, (username,))
         logger.debug("OK: cur.execute()")
         result = cur.fetchone()
         logger.debug("OK: cur.fetchone()")
         if result is None:
             return None
 
-        user.id = result["id"]
-        user.username = result["username"]
-        user.password_hash = result["password_hash"]
-        user.is_online = result["is_online"]
-        user.is_registered = result["is_registered"]
-        user.is_preparation = result["is_preparation"]
-    return user
+    logger.debug("END: get_user()")
+    return LoginUser(
+        id=result["id"],
+        username=result["username"],
+        password_hash=result["password_hash"],
+        is_online=result["is_online"],
+        is_registered=result["is_registered"],
+        is_preparation=result["is_preparation"],
+    )
 
 
 def create_access_token(data: dict, expires_delta: timedelta) -> str:
@@ -80,9 +81,12 @@ def create_access_token(data: dict, expires_delta: timedelta) -> str:
     logger.debug('OK: to_encode.update({"exp": expire})')
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     logger.debug("OK: jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)")
+    logger.debug("END: create_access_token()")
     return encoded_jwt
 
 
 def get_access_token_expires() -> timedelta:
     logger.debug("START: get_access_token_expires()")
-    return timedelta(minutes=float(ACCESS_TOKEN_EXPIRE_MINUTES))
+    t = timedelta(minutes=float(ACCESS_TOKEN_EXPIRE_MINUTES))
+    logger.debug("END: get_access_token_expires()")
+    return t
