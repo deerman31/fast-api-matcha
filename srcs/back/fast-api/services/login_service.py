@@ -14,30 +14,24 @@ from services.err import USER_NOT_FOUND, INVALID_PASSWORD, EMAIL_NOT_VARIFY
 class LoginService:
     @staticmethod
     def login(conn: connection, data: LoginRequest) -> dict:
-        print("1----------------------------------------")
         user = get_user(conn, data.username)
-        print("2----------------------------------------")
         if user is None:
-            print("3----------------------------------------")
             raise HTTPException(
                 status_code=USER_NOT_FOUND.status_code,
                 detail=USER_NOT_FOUND.message,
             )
-        print("4---------------------------------------")
 
         if not user.is_registered:
             raise HTTPException(
                 status_code=EMAIL_NOT_VARIFY.status_code,
                 detail=EMAIL_NOT_VARIFY.message,
             )
-        print("5---------------------------------------")
 
         if not verify_password(data.password, user.password_hash):
             raise HTTPException(
                 status_code=INVALID_PASSWORD.status_code,
                 detail=INVALID_PASSWORD.message,
             )
-        print("6---------------------------------------")
 
         expires = get_access_token_expires()
         access_token = create_access_token(data={"sub": user.id}, expires_delta=expires)
